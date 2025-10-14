@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ESP Data Receiver</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 24px; }
+      pre { background: #f6f6f6; padding: 12px; border-radius: 6px; }
+      .item { margin-bottom: 12px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
+    </style>
+  </head>
+  <body>
+    <h1>ESP8266 / NodeMCU Data Receiver</h1>
+    <p>This page shows the latest data posted by devices on the LAN.</p>
+
+    <div>
+      <button id="refresh">Refresh Now</button>
+      <label style="margin-left: 12px;">Auto-refresh:
+        <input type="checkbox" id="autorefresh" checked />
+      </label>
+      <label style="margin-left: 12px;">Interval (s):
+        <input type="number" id="interval" value="2" style="width: 60px" />
+      </label>
+    </div>
+
+    <h2>Latest</h2>
+    <div id="latest">(no data yet)</div>
+
+    <h2>Recent (up to 100)</h2>
+    <div id="recent"></div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
