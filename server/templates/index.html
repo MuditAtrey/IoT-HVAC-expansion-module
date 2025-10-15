@@ -3,16 +3,32 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ESP Data Receiver</title>
+    <title>HVAC Temperature Monitor</title>
     <style>
       body { font-family: Arial, sans-serif; margin: 24px; }
       pre { background: #f6f6f6; padding: 12px; border-radius: 6px; }
       .item { margin-bottom: 12px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
+      .temp-display {
+        font-size: 24px;
+        margin: 20px 0;
+        padding: 15px;
+        background: #f0f0f0;
+        border-radius: 8px;
+      }
+      .temp-value {
+        font-weight: bold;
+        color: #2962ff;
+      }
     </style>
   </head>
   <body>
-    <h1>ESP8266 / NodeMCU Data Receiver</h1>
-    <p>This page shows the latest data posted by devices on the LAN.</p>
+    <h1>HVAC Temperature & Humidity Monitor</h1>
+    <div class="temp-display">
+      <div>Outside Temperature: <span id="outside-temp" class="temp-value">--</span>°C</div>
+      <div>Outside Humidity: <span id="outside-hum" class="temp-value">--</span>%</div>
+      <div style="margin-top: 10px;">Indoor Temperature: <span id="indoor-temp" class="temp-value">--</span>°C</div>
+      <div>Indoor Humidity: <span id="indoor-hum" class="temp-value">--</span>%</div>
+    </div>
 
     <div>
       <button id="refresh">Refresh Now</button>

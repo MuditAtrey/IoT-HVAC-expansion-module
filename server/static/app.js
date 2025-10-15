@@ -5,20 +5,35 @@ async function fetchLatest() {
     return;
   }
   const json = await res.json();
-  const recent = document.getElementById('recent');
-  recent.innerHTML = '';
   if (!json.data || json.data.length === 0) {
-    recent.innerText = '(no data)';
-    document.getElementById('latest').innerText = '(no data yet)';
+    document.getElementById('outside-temp').innerText = '--';
+    document.getElementById('outside-hum').innerText = '--';
+    document.getElementById('indoor-temp').innerText = '--';
+    document.getElementById('indoor-hum').innerText = '--';
     return;
   }
-  document.getElementById('latest').innerHTML = formatItem(json.data[0]);
-  json.data.forEach(item => {
-    const div = document.createElement('div');
-    div.className = 'item';
-    div.innerHTML = formatItem(item);
-    recent.appendChild(div);
-  });
+  
+  // Find latest temperatures and humidity from both NodeMCUs
+  let outdoorTemp = '--';
+  let outdoorHum = '--';
+  let indoorTemp = '--';
+  let indoorHum = '--';
+  
+  for (const item of json.data) {
+    if (item.type === 'encoder' && outdoorTemp === '--') {
+      outdoorTemp = item.payload.temperature || '--';
+      outdoorHum = item.payload.humidity || '--';
+    } else if (item.type === 'indoor' && indoorTemp === '--') {
+      indoorTemp = item.payload.temperature || '--';
+      indoorHum = item.payload.humidity || '--';
+    }
+    if (outdoorTemp !== '--' && indoorTemp !== '--') break;
+  }
+  
+  document.getElementById('outside-temp').innerText = outdoorTemp;
+  document.getElementById('outside-hum').innerText = outdoorHum;
+  document.getElementById('indoor-temp').innerText = indoorTemp;
+  document.getElementById('indoor-hum').innerText = indoorHum;
 }
 
 function formatItem(item) {
