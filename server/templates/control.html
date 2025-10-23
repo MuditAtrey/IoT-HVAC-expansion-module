@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>HVAC Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            height: 100vh;
+            padding: 8px;
+            overflow: hidden;
+        }
+
+        .container {
+            max-width: 100%;
+            height: calc(100vh - 16px);
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            position: relative;
+            flex-shrink: 0;
+            padding: 8px 0;
+        }
+
+        .header h1 {
+            font-size: clamp(1.2em, 4vw, 1.8em);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .back-button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            left: 0;
+            background: white;
+            color: #667eea;
+            padding: 6px 14px;
+            border-radius: 15px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: clamp(0.65em, 2.5vw, 0.75em);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .back-button:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+
+        .status-item {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            padding: 8px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .status-label {
+            font-size: clamp(0.7em, 2.3vw, 0.8em);
+            color: #666;
+            font-weight: 500;
+        }
+
+        .status-value {
+            font-size: clamp(0.9em, 3vw, 1.1em);
+            font-weight: bold;
+            color: #333;
+        }
+
+        .status-value.temp {
+            color: #ff6b6b;
+        }
+
+        .status-value.hum {
+            color: #4ecdc4;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .control-panel h2 {
+            color: #667eea;
+            font-size: clamp(1em, 3.5vw, 1.3em);
+            margin-bottom: 12px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .control-section {
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            flex-shrink: 0;
+        }
+
+        .control-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .control-label {
+            font-size: clamp(0.8em, 2.8vw, 0.95em);
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Power Toggle */
+        .power-toggle {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .power-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            background: white;
+            font-size: clamp(0.9em, 3.2vw, 1.1em);
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            touch-action: manipulation;
+        }
+
+        .power-btn.active.on {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+
+        .power-btn.active.off {
+            background: #f44336;
+            color: white;
+            border-color: #f44336;
+        }
+
+        /* Temperature Control */
+        .temp-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .temp-btn {
+            width: clamp(45px, 12vw, 55px);
+            height: clamp(45px, 12vw, 55px);
+            border-radius: 50%;
+            border: none;
+            background: #667eea;
+            color: white;
+            font-size: clamp(1.5em, 5vw, 1.8em);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+            touch-action: manipulation;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .temp-btn:active {
+            transform: scale(0.95);
+        }
+
+        .temp-display {
+            font-size: clamp(2em, 7vw, 2.5em);
+            font-weight: bold;
+            color: #667eea;
+            min-width: clamp(80px, 25vw, 100px);
+            text-align: center;
+        }
+
+        /* Button Groups */
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+            gap: 6px;
+        }
+
+        .mode-btn, .fan-btn, .swing-btn {
+            padding: 10px 8px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            font-size: clamp(0.75em, 2.5vw, 0.85em);
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            touch-action: manipulation;
+        }
+
+        .mode-btn.active, .fan-btn.active, .swing-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        /* Timer Input */
+        .timer-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .timer-input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: clamp(0.9em, 3vw, 1em);
+            text-align: center;
+        }
+
+        .timer-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .timer-unit {
+            font-size: clamp(0.8em, 2.8vw, 0.95em);
+            color: #666;
+            font-weight: 500;
+        }
+
+        /* Last Update */
+        .last-update {
+            text-align: center;
+            color: #999;
+            font-size: clamp(0.7em, 2.3vw, 0.8em);
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+            flex-shrink: 0;
+        }
+
+        /* Success Message */
+        .success-message {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #4CAF50;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+            z-index: 1000;
+            font-size: clamp(0.8em, 2.8vw, 0.9em);
+        }
+
+        .success-message.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Scrollbar - minimal for mobile */
+        .control-panel::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .control-panel::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .control-panel::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 2px;
+        }
+
+        /* Mobile portrait - compact layout */
+        @media (max-width: 600px) and (orientation: portrait) {
+            .status-bar {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Very small screens */
+        @media (max-width: 400px) {
+            body {
+                padding: 4px;
+            }
+            
+            .container {
+                height: calc(100vh - 8px);
+            }
+            
+            .header h1 {
+                font-size: 1em;
+            }
+            
+            .status-bar,
+            .control-section {
+                gap: 4px;
+                margin-bottom: 6px;
+            }
+            
+            .control-panel {
+                padding: 8px;
+                border-radius: 8px;
+            }
+        }
+
+        /* Kindle-specific optimizations */
+        @media (max-device-width: 758px) {
+            body {
+                background: #e5e5e5;
+            }
+            
+            .status-item,
+            .control-panel {
+                box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/" class="back-button">← Back to Monitor</a>
+            <h1>🎛️ HVAC Control Panel</h1>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-item">
+                <span class="status-label">🌡️ Current Temperature</span>
+                <span class="status-value temp" id="current-temp">--°C</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">💧 Current Humidity</span>
+                <span class="status-value hum" id="current-humidity">--%</span>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <h2>❄️ HVAC Settings</h2>
+
+            <!-- Power Control -->
+            <div class="control-section">
+                <div class="control-label">🔌 Power</div>
+                <div class="power-toggle">
+                    <button class="power-btn on" id="power-on" onclick="setPower('on')">ON</button>
+                    <button class="power-btn off" id="power-off" onclick="setPower('off')">OFF</button>
+                </div>
+            </div>
+
+            <!-- Temperature Control -->
+            <div class="control-section">
+                <div class="control-label">🌡️ Set Temperature (16°C - 30°C)</div>
+                <div class="temp-control">
+                    <button class="temp-btn" onclick="decreaseTemp()">−</button>
+                    <div class="temp-display" id="temp-display">24°C</div>
+                    <button class="temp-btn" onclick="increaseTemp()">+</button>
+                </div>
+            </div>
+
+            <!-- Mode Control -->
+            <div class="control-section">
+                <div class="control-label">🔄 Mode</div>
+                <div class="button-group">
+                    <button class="mode-btn" data-mode="cool" onclick="setMode('cool')">Cool</button>
+                    <button class="mode-btn" data-mode="heat" onclick="setMode('heat')">Heat</button>
+                    <button class="mode-btn" data-mode="fan" onclick="setMode('fan')">Fan</button>
+                    <button class="mode-btn" data-mode="dry" onclick="setMode('dry')">Dry</button>
+                    <button class="mode-btn" data-mode="auto" onclick="setMode('auto')">Auto</button>
+                </div>
+            </div>
+
+            <!-- Fan Speed Control -->
+            <div class="control-section">
+                <div class="control-label">💨 Fan Speed</div>
+                <div class="button-group">
+                    <button class="fan-btn" data-speed="low" onclick="setFanSpeed('low')">Low</button>
+                    <button class="fan-btn" data-speed="medium" onclick="setFanSpeed('medium')">Medium</button>
+                    <button class="fan-btn" data-speed="high" onclick="setFanSpeed('high')">High</button>
+                    <button class="fan-btn" data-speed="auto" onclick="setFanSpeed('auto')">Auto</button>
+                </div>
+            </div>
+
+            <!-- Timer Control -->
+            <div class="control-section">
+                <div class="control-label">⏰ Timer</div>
+                <div class="timer-control">
+                    <input type="number" class="timer-input" id="timer-input" min="0" max="720" value="0" onchange="setTimer()">
+                    <span class="timer-unit">minutes</span>
+                </div>
+            </div>
+
+            <!-- Swing Control -->
+            <div class="control-section">
+                <div class="control-label">🔀 Swing</div>
+                <div class="button-group">
+                    <button class="swing-btn" data-swing="on" onclick="setSwing('on')">On</button>
+                    <button class="swing-btn" data-swing="off" onclick="setSwing('off')">Off</button>
+                </div>
+            </div>
+
+            <!-- Schedule Control -->
+            <div class="control-section">
+                <div class="control-label">📅 Schedule (Auto On/Off)</div>
+                <div class="button-group" style="margin-bottom: 10px;">
+                    <button class="swing-btn" data-schedule="enabled" id="schedule-enabled" onclick="setScheduleEnabled(true)">Enabled</button>
+                    <button class="swing-btn" data-schedule="disabled" id="schedule-disabled" onclick="setScheduleEnabled(false)">Disabled</button>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
+                    <div>
+                        <label style="font-size: clamp(0.7em, 2.3vw, 0.8em); color: #666; display: block; margin-bottom: 4px;">⏰ Turn ON at:</label>
+                        <input type="time" class="timer-input" id="schedule-start" style="width: 100%;" onchange="updateSchedule()">
+                    </div>
+                    <div>
+                        <label style="font-size: clamp(0.7em, 2.3vw, 0.8em); color: #666; display: block; margin-bottom: 4px;">⏰ Turn OFF at:</label>
+                        <input type="time" class="timer-input" id="schedule-end" style="width: 100%;" onchange="updateSchedule()">
+                    </div>
+                </div>
+                <div id="schedule-info" style="margin-top: 8px; padding: 8px; background: #f0f0f0; border-radius: 6px; font-size: clamp(0.7em, 2.3vw, 0.8em); color: #666; text-align: center;">
+                    Schedule disabled
+                </div>
+            </div>
+
+            <div class="last-update" id="last-update">No data yet</div>
+        </div>
+    </div>
+
+    <!-- Success Message -->
+    <div class="success-message" id="success-message">Settings updated!</div>
+
+    <script>
+        let currentTemp = 24;
+        const MIN_TEMP = 16;
+        const MAX_TEMP = 30;
+
+        // Update current sensor values every 5 seconds
+        function updateCurrentValues() {
+            fetch('/api/current')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.temperature !== null && data.humidity !== null) {
+                        document.getElementById('current-temp').textContent = 
+                            `${parseFloat(data.temperature).toFixed(1)}°C`;
+                        document.getElementById('current-humidity').textContent = 
+                            `${parseFloat(data.humidity).toFixed(1)}%`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching current values:', error);
+                });
+        }
+
+        // Update HVAC settings display
+        function updateHVACDisplay() {
+            fetch('/api/hvac')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.power !== null) {
+                        // Update power buttons
+                        document.getElementById('power-on').classList.remove('active');
+                        document.getElementById('power-off').classList.remove('active');
+                        document.getElementById(`power-${data.power}`).classList.add('active');
+
+                        // Update temperature
+                        currentTemp = data.set_temp;
+                        document.getElementById('temp-display').textContent = `${currentTemp}°C`;
+
+                        // Update mode buttons
+                        document.querySelectorAll('.mode-btn').forEach(btn => {
+                            btn.classList.remove('active');
+                            if (btn.dataset.mode === data.mode) {
+                                btn.classList.add('active');
+                            }
+                        });
+
+                        // Update fan speed buttons
+                        document.querySelectorAll('.fan-btn').forEach(btn => {
+                            btn.classList.remove('active');
+                            if (btn.dataset.speed === data.fan_speed) {
+                                btn.classList.add('active');
+                            }
+                        });
+
+                        // Update timer
+                        document.getElementById('timer-input').value = data.timer;
+
+                        // Update swing buttons
+                        document.querySelectorAll('.swing-btn').forEach(btn => {
+                            btn.classList.remove('active');
+                            if (btn.dataset.swing === data.swing) {
+                                btn.classList.add('active');
+                            }
+                        });
+
+                        // Update last update time
+                        if (data.timestamp) {
+                            document.getElementById('last-update').textContent = 
+                                `Last updated: ${data.timestamp}`;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching HVAC settings:', error);
+                });
+        }
+
+        // Send setting update to server
+        function updateSetting(setting, value) {
+            const data = {};
+            data[setting] = value;
+
+            fetch('/api/hvac/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showSuccessMessage();
+                    updateHVACDisplay();
+                }
+            })
+            .catch(error => {
+                console.error('Error updating setting:', error);
+            });
+        }
+
+        // Show success message
+        function showSuccessMessage() {
+            const msg = document.getElementById('success-message');
+            msg.classList.add('show');
+            setTimeout(() => {
+                msg.classList.remove('show');
+            }, 2000);
+        }
+
+        // Power control
+        function setPower(state) {
+            updateSetting('power', state);
+        }
+
+        // Temperature control
+        function increaseTemp() {
+            if (currentTemp < MAX_TEMP) {
+                currentTemp++;
+                document.getElementById('temp-display').textContent = `${currentTemp}°C`;
+                updateSetting('set_temp', currentTemp);
+            }
+        }
+
+        function decreaseTemp() {
+            if (currentTemp > MIN_TEMP) {
+                currentTemp--;
+                document.getElementById('temp-display').textContent = `${currentTemp}°C`;
+                updateSetting('set_temp', currentTemp);
+            }
+        }
+
+        // Mode control
+        function setMode(mode) {
+            updateSetting('mode', mode);
+        }
+
+        // Fan speed control
+        function setFanSpeed(speed) {
+            updateSetting('fan_speed', speed);
+        }
+
+        // Timer control
+        function setTimer() {
+            const timer = parseInt(document.getElementById('timer-input').value);
+            if (timer >= 0 && timer <= 720) {
+                updateSetting('timer', timer);
+            }
+        }
+
+        // Swing control
+        function setSwing(state) {
+            updateSetting('swing', state);
+        }
+
+        // Schedule control
+        function updateScheduleDisplay() {
+            fetch('/api/schedule')
+                .then(response => response.json())
+                .then(data => {
+                    // Update enabled/disabled buttons
+                    document.getElementById('schedule-enabled').classList.remove('active');
+                    document.getElementById('schedule-disabled').classList.remove('active');
+                    if (data.enabled) {
+                        document.getElementById('schedule-enabled').classList.add('active');
+                    } else {
+                        document.getElementById('schedule-disabled').classList.add('active');
+                    }
+
+                    // Update time inputs
+                    document.getElementById('schedule-start').value = data.start_time;
+                    document.getElementById('schedule-end').value = data.end_time;
+
+                    // Update info text
+                    const infoDiv = document.getElementById('schedule-info');
+                    if (data.enabled) {
+                        infoDiv.textContent = `AC will turn ON at ${data.start_time} and OFF at ${data.end_time}`;
+                        infoDiv.style.background = '#e8f5e9';
+                        infoDiv.style.color = '#2e7d32';
+                    } else {
+                        infoDiv.textContent = 'Schedule disabled';
+                        infoDiv.style.background = '#f0f0f0';
+                        infoDiv.style.color = '#666';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching schedule:', error);
+                });
+        }
+
+        function setScheduleEnabled(enabled) {
+            fetch('/api/schedule/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ enabled: enabled })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showSuccessMessage();
+                    updateScheduleDisplay();
+                }
+            })
+            .catch(error => {
+                console.error('Error updating schedule:', error);
+            });
+        }
+
+        function updateSchedule() {
+            const startTime = document.getElementById('schedule-start').value;
+            const endTime = document.getElementById('schedule-end').value;
+
+            if (!startTime || !endTime) {
+                return;
+            }
+
+            fetch('/api/schedule/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    start_time: startTime,
+                    end_time: endTime
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showSuccessMessage();
+                    updateScheduleDisplay();
+                }
+            })
+            .catch(error => {
+                console.error('Error updating schedule:', error);
+            });
+        }
+
+        // Initial load
+        updateCurrentValues();
+        updateHVACDisplay();
+        updateScheduleDisplay();
+
+        // Update every 5 seconds
+        setInterval(updateCurrentValues, 5000);
+        setInterval(updateHVACDisplay, 5000);
+        setInterval(updateScheduleDisplay, 10000);  // Update schedule less frequently
+    </script>
+</body>
+</html>

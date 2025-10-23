@@ -1,0 +1,19 @@
+IOT-HVAC-System/
+  docs
+  firmware
+  firmware/include
+  firmware/lib
+  firmware/src
+  server
+  server/templates
+
+Key Files:
+  PROJECT_STRUCTURE.txt
+  QUICKSTART.md
+  README.md
+  docs/ARCHITECTURE.md
+  docs/HARDWARE_SETUP.md
+  firmware/platformio.ini
+  firmware/src/main.cpp
+  server/requirements.txt
+  server/server.py

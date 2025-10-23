@@ -1,0 +1,46 @@
+# Python
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# PlatformIO
+.pio/
+.pioenvs/
+.piolibdeps/
+.clang_complete
+.gcc-flags.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Data files
+sensor_data.csv
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+*.cache
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# OS
+Thumbs.db
