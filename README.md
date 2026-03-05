@@ -1,4 +1,4 @@
-# 🌡️ IoT HVAC Control System
+# 🌡️ IoT HVAC Expansion Module
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PlatformIO](https://img.shields.io/badge/PlatformIO-Compatible-orange.svg)](https://platformio.org/)
@@ -110,6 +110,9 @@ This project implements a sophisticated HVAC control system that combines:
 
 ## 🛠️ Hardware Requirements
 
+> ⚠️ **Important: Logic Level Warning**
+> The Arduino Uno R4 Minima outputs **5V** on its TX pin, while the ESP8266 RX pin is **3.3V tolerant only**. Connecting these directly can damage the ESP8266 over time. Use a logic level shifter (e.g., BSS138-based bidirectional shifter) on the Serial TX line between the two boards.
+
 ### Arduino Uno R4 Minima Setup
 - **Board**: Arduino Uno R4 Minima
 - **Display 1** (Room Conditions - SPI):
@@ -119,12 +122,12 @@ This project implements a sophisticated HVAC control system that combines:
 - **DHT22 Sensor**: Data → D2
 - **Rotary Encoder**: CLK → D3, DT → D4, SW → A1
 - **Power Button**: A0 (with pull-up resistor)
-- **Serial Connection**: TX (D1) → ESP8266 RX, RX (D0) → ESP8266 TX
+- **Serial Connection**: TX (D1) → ESP8266 RX *(via logic level shifter)*, RX (D0) → ESP8266 TX
 
 ### ESP8266 NodeMCU Setup
 - **Board**: ESP8266 NodeMCU
 - **IR LED (3-pin)**: Signal → D2 (GPIO4), VCC → 5V (via transistor), GND → GND
-- **Serial Connection**: RX → Arduino TX, TX → Arduino RX, GND → Arduino GND
+- **Serial Connection**: RX → Arduino TX *(via logic level shifter)*, TX → Arduino RX, GND → Arduino GND
 - **Power**: 5V via USB or external supply
 
 ### Additional Components
@@ -135,6 +138,7 @@ This project implements a sophisticated HVAC control system that combines:
 - 1x NPN Transistor (e.g., 2N2222) for IR LED driver
 - 1x 100Ω Resistor (for IR LED)
 - 1x Push Button
+- 1x Logic Level Shifter (bidirectional, 5V↔3.3V) — for Arduino→ESP8266 serial
 - Jumper wires and breadboard
 - 2x USB cables (for programming)
 
@@ -144,6 +148,8 @@ This project implements a sophisticated HVAC control system that combines:
 - **PlatformIO**: Latest version
 - **Arduino Framework**: Compatible with R4 Minima
 - **ESP8266 Framework**: Arduino core for ESP8266
+
+> **Note on Unified Firmware**: Both the Arduino R4 Minima and ESP8266 NodeMCU are flashed from a single `firmware/src/main.cpp` file. PlatformIO uses two separate build environments defined in `platformio.ini` (`uno_r4_minima` and `nodemcuv2`). Conditional compilation (`#ifdef`) is used to include only the relevant code for each target board. You upload to each board separately using the `pio run -e <env> --target upload` command.
 
 ### Required Libraries (Auto-installed by PlatformIO)
 - `U8g2` - OLED display driver
@@ -162,8 +168,8 @@ This project implements a sophisticated HVAC control system that combines:
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/IOT-HVAC-System.git
-cd IOT-HVAC-System
+git clone https://github.com/MuditAtrey/IoT-HVAC-expansion-module.git
+cd IoT-HVAC-expansion-module
 ```
 
 ### 2. Firmware Setup
@@ -405,13 +411,13 @@ Get last 50 historical data points.
 ## 📁 Project Structure
 
 ```
-IOT-HVAC-System/
+IoT-HVAC-expansion-module/
 ├── firmware/                   # Microcontroller code
 │   ├── src/
-│   │   └── main.cpp           # Unified Arduino/ESP8266 firmware
+│   │   └── main.cpp           # Unified Arduino/ESP8266 firmware (env-split via platformio.ini)
 │   ├── include/               # Header files
 │   ├── lib/                   # Local libraries
-│   └── platformio.ini         # PlatformIO configuration
+│   └── platformio.ini         # PlatformIO configuration (defines uno_r4_minima + nodemcuv2 envs)
 │
 ├── server/                    # Flask web server
 │   ├── server.py             # Main server application
@@ -420,7 +426,7 @@ IOT-HVAC-System/
 │   │   └── control.html      # Control panel
 │   └── requirements.txt      # Python dependencies
 │
-├── docs/                     # Documentation
+├── docs/                     # Documentation (work in progress)
 │   ├── HARDWARE_SETUP.md    # Hardware wiring guide
 │   ├── API.md               # Detailed API documentation
 │   └── TROUBLESHOOTING.md   # Common issues and solutions
@@ -441,8 +447,7 @@ The system currently uses the Daikin IR protocol. To change to another brand:
 #include <ir_Daikin.h>  // Change to your brand (e.g., ir_Samsung.h)
 IRDaikinESP ac(kIrLed);  // Change to your brand class
 ```
-
-3. Update the helper functions accordingly
+3. Update the `sendIRCommand()` helper function to use the new class's API (method names differ per brand — refer to the [IRremoteESP8266 examples](https://github.com/crankyoldgit/IRremoteESP8266/tree/master/examples) for your specific brand)
 
 Supported brands: Daikin, Mitsubishi, Samsung, LG, Panasonic, Hitachi, and more.
 
@@ -490,7 +495,7 @@ Default range is 16-30°C. Modify in both Arduino and ESP8266 sections if needed
 ### Serial Communication Issues
 - Baud rates must match: Arduino Serial1 = ESP8266 Serial = 9600
 - Verify TX/RX crossover connection
-- Use a logic level shifter if available (R4 TX is 5V, ESP RX is 3.3V)
+- ⚠️ The R4 Minima TX pin outputs 5V — the ESP8266 RX pin is 3.3V only. Use a logic level shifter to avoid damaging the ESP8266
 
 ### Web Interface Not Loading
 - Check server is running (`python server.py`)
